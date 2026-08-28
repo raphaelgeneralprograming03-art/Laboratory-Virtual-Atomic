@@ -38,13 +38,14 @@
             justify-content: center;
         }
 
-        /* PAINEL LARANJA PEDIDO */
+        /* PAINEL LARANJA */
         .panel {
             background-color: #ea580c;
             border-radius: 12px;
-            padding: 15px;
+            padding: 20px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             width: 450px;
+            box-sizing: border-box;
         }
 
         .panel-title {
@@ -52,20 +53,31 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: #ffffff;
             border-bottom: 1px solid #ff7a33;
             padding-bottom: 5px;
         }
 
-        /* ÁREAS DE SIMULAÇÃO REFEITAS USANDO DIVS SÓLIDAS */
+        /* ÁREAS DE CONTEÚDO CORRIGIDAS */
         .display-box {
             background-color: #020617;
             border-radius: 8px;
-            width: 450px;
-            height: 400px;
+            height: 350px;
             position: relative;
             overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        /* GRID FORÇADO PARA OS ÁTOMOS APARECEREM SEMPRE */
+        #detectorView {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 25px;
+            align-content: center;
+            justify-items: center;
+            box-sizing: border-box;
         }
 
         .controls {
@@ -81,7 +93,7 @@
             gap: 10px;
         }
 
-        /* BOTÕES PRETO E VERDE PEDIDOS */
+        /* BOTÕES PRETO E VERDE */
         button {
             background-color: #000000;
             color: #10b981;
@@ -130,58 +142,79 @@
             justify-content: space-between;
         }
 
-        /* ELEMENTOS DA CÂMARA DE XENÔNIO */
+        /* ÁTOMOS DE XENÔNIO VISÍVEIS */
         .atom {
-            width: 24px;
-            height: 24px;
+            width: 40px;
+            height: 40px;
             background-color: #0284c7;
             border: 2px solid #38bdf8;
             border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        /* EFEITO DE IMPACTO PISCANDE */
+        .flash-active {
+            background-color: #38bdf8 !important;
+            box-shadow: 0 0 20px #38bdf8;
+            transform: scale(1.2);
+        }
+
+        /* ELEMENTOS DO GRÁFICO DIREITO */
+        .chart-zone-top {
             position: absolute;
-            transition: transform 0.1s linear;
+            left: 50px;
+            top: 30px;
+            width: 330px;
+            height: 130px;
+            background-color: rgba(59, 130, 246, 0.15);
+            border-left: 2px solid #64748b;
         }
 
-        .particle {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
+        .chart-zone-bottom {
             position: absolute;
+            left: 50px;
+            top: 162px;
+            width: 330px;
+            height: 130px;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 2px solid #64748b;
+            border-bottom: 2px solid #64748b;
         }
 
-        /* ANIMAÇÃO DE IMPACTO CINTILAÇÃO (S1) */
-        @keyframes pulse-effect {
-            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-            100% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
-        }
-        .pulse {
-            animation: pulse-effect 0.4s ease-out;
-        }
-
-        /* LINHA DIVISÓRIA DO GRÁFICO */
         .chart-line {
             position: absolute;
             left: 50px;
-            top: 180px;
-            width: 370px;
+            top: 160px;
+            width: 330px;
             height: 2px;
             background-color: #10b981;
-            z-index: 2;
         }
 
-        /* TEXTOS INTERNOS DO GRÁFICO */
         .chart-label {
             position: absolute;
             font-size: 11px;
-            color: #64748b;
+            font-weight: bold;
         }
 
         .dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             position: absolute;
-            border: 1px solid #ffffff;
+            border: 2px solid #ffffff;
             transform: translate(-50%, -50%);
+            animation: pop 0.3s ease-out;
+        }
+
+        @keyframes pop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
         }
     </style>
 </head>
@@ -194,7 +227,9 @@
         <!-- Painel Esquerdo -->
         <div class="panel">
             <div class="panel-title">🔬 Câmara de Xenônio Líquido (Tempo Real)</div>
-            <div id="detectorView" class="display-box"></div>
+            <div id="detectorView" class="display-box">
+                <!-- Os átomos serão gerados aqui via script de forma visível e fixa -->
+            </div>
             <div class="controls">
                 <div class="btn-group">
                     <button id="trigger-noise">Injetar Ruído</button>
@@ -214,16 +249,14 @@
         <div class="panel">
             <div class="panel-title">📊 Análise de Dados: log10(S2/S1) vs Energia</div>
             <div id="chartView" class="display-box">
-                <!-- Zonas de Fundo -->
-                <div style="position:absolute; left:50px; top:40px; width:370px; height:140px; background-color:rgba(59,130,246,0.08);"></div>
-                <div style="position:absolute; left:50px; top:180px; width:370px; height:160px; background-color:rgba(239,68,68,0.05);"></div>
-                
+                <!-- Estruturas Estáticas Visuais do Gráfico -->
+                <div class="chart-zone-top"></div>
+                <div class="chart-zone-bottom"></div>
                 <div class="chart-line"></div>
                 
-                <!-- Textos das Zonas -->
-                <div class="chart-label" style="left:280px; top:60px;">Zona de Ruído (ER)</div>
-                <div class="chart-label" style="left:230px; top:280px; color:#f87171;">Zona de Matéria Escura (NR)</div>
-                <div class="chart-label" style="left:170px; top:360px; color:#94a3b8;">Energia de Recuo (Subindo &rarr;)</div>
+                <div class="chart-label" style="left: 230px; top: 40px; color: #94a3b8;">Zona de Ruído (ER)</div>
+                <div class="chart-label" style="left: 190px; top: 250px; color: #f87171;">Zona de Matéria Escura (NR)</div>
+                <div class="chart-label" style="left: 150px; top: 310px; color: #64748b;">Energia de Recuo (keV) &rarr;</div>
             </div>
             <div class="stats">
                 <span>Ruídos Filtrados: <strong id="count-noise" style="color:#000000">0</strong></span>
@@ -238,7 +271,6 @@
         const massSlider = document.getElementById('mass-slider');
         const massVal = document.getElementById('mass-val');
 
-        let atoms = [];
         let counters = { noise: 0, wimp: 0 };
         let currentWimpMass = 100;
 
@@ -247,66 +279,39 @@
             massVal.innerText = currentWimpMass + " GeV";
         });
 
-        // Criar os Átomos de Xenônio visíveis fisicamente na tela
-        for (let i = 0; i < 15; i++) {
-            let el = document.createElement('div');
-            el.className = 'atom';
-            detectorView.appendChild(el);
-
-            atoms.push({
-                element: el,
-                x: Math.random() * 380 + 20,
-                y: Math.random() * 340 + 20,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 2
-            });
+        // 1. Gera 12 átomos de Xenônio fixos e perfeitamente visíveis em Grid (Garante o fim da tela preta)
+        const totalAtoms = 12;
+        for (let i = 0; i < totalAtoms; i++) {
+            let atomEl = document.createElement('div');
+            atomEl.className = 'atom';
+            atomEl.innerText = "Xe";
+            detectorView.appendChild(atomEl);
         }
 
-        // Evento Injetar Ruído (Partícula Amarela)
+        // Captura a lista de átomos criados para podermos animá-los nos cliques
+        const atomList = document.querySelectorAll('.atom');
+
+        // 2. Interações dos Botões Corrigidas para Atualizar os Dois Painéis Simultaneamente
         document.getElementById('trigger-noise').addEventListener('click', function() {
-            createParticle('#eab308', 'noise');
+            executeCollision('noise');
         });
 
-        // Evento Disparar Matéria Escura (Partícula Vermelha)
         document.getElementById('trigger-wimp').addEventListener('click', function() {
-            createParticle('#ef4444', 'wimp');
+            executeCollision('wimp');
         });
 
-        function createParticle(color, type) {
-            let pEl = document.createElement('div');
-            pEl.className = 'particle';
-            pEl.style.backgroundColor = color;
-            pEl.style.left = '0px';
-            
-            let targetY = Math.random() * 340 + 30;
-            pEl.style.top = targetY + 'px';
-            detectorView.appendChild(pEl);
+        function executeCollision(type) {
+            // Seleciona um átomo aleatório para simular a colisão direta
+            let randomIndex = Math.floor(Math.random() * atomList.length);
+            let targetAtom = atomList[randomIndex];
 
-            let posX = 0;
-            let interval = setInterval(function() {
-                posX += 8;
-                pEl.style.left = posX + 'px';
+            // Ativa o flash visual de cintilação (S1) no painel esquerdo
+            targetAtom.classList.add('flash-active');
+            setTimeout(function() {
+                targetAtom.classList.remove('flash-active');
+            }, 250);
 
-                // Checar proximidade com os átomos
-                atoms.forEach(function(atom) {
-                    let dx = posX - atom.x;
-                    let dy = targetY - atom.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
+            // Processa as pontuações e gera os pontos no gráfico correspondente
+            let dot = document.createElement('div');
+            dot.className = 'dot';
 
-                    if (dist < 22) { // Houve Colisão
-                        clearInterval(interval);
-                        pEl.remove();
-                        
-                        // Efeito visual de cintilação (S1) instantâneo
-                        atom.element.classList.add('pulse');
-                        setTimeout(() => atom.element.classList.remove('pulse'), 400);
-
-                        // Agita o átomo (transfere energia)
-                        atom.vx += type === 'wimp' ? (currentWimpMass / 50) : 0.5;
-                        atom.vy += (Math.random() - 0.5) * 2;
-
-                        plotData(type);
-                    }
-                });
-
-                if (posX > 450) {
