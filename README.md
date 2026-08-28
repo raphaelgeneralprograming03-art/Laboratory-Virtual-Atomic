@@ -3,22 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratório Virtual: Simulação de Matéria Escura</title>
+    <title>Laboratório Virtual: Matéria Escura</title>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --panel-color: #1e293b;
-            --accent-wimp: #ef4444;
-            --accent-xenon: #38bdf8;
-            --text-color: #f8fafc;
-        }
-
         body {
             margin: 0;
             padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -46,11 +38,12 @@
             justify-content: center;
         }
 
+        /* PAINEL ALTERADO PARA LARANJA */
         .panel {
-            background-color: var(--panel-color);
+            background-color: #ea580c;
             border-radius: 12px;
             padding: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
 
         .panel-title {
@@ -59,8 +52,8 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 10px;
-            color: #cbd5e1;
-            border-bottom: 1px solid #334155;
+            color: #ffffff;
+            border-bottom: 1px solid #ff7a33;
             padding-bottom: 5px;
         }
 
@@ -83,28 +76,23 @@
             gap: 10px;
         }
 
+        /* BOTÕES ALTERADOS PARA PRETO E VERDE */
         button {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+            background-color: #000000;
+            color: #10b981;
+            border: 2px solid #10b981;
+            padding: 12px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.2s;
             flex: 1;
         }
 
         button:hover {
-            background-color: #1d4ed8;
-        }
-
-        button#trigger-wimp {
-            background-color: var(--accent-wimp);
-        }
-
-        button#trigger-wimp:hover {
-            background-color: #dc2626;
+            background-color: #10b981;
+            color: #000000;
         }
 
         .slider-group {
@@ -112,7 +100,8 @@
             flex-direction: column;
             gap: 5px;
             font-size: 12px;
-            color: #94a3b8;
+            color: #ffffff;
+            font-weight: bold;
         }
 
         .slider-row {
@@ -124,13 +113,14 @@
 
         input[type="range"] {
             flex: 1;
-            accent-color: var(--accent-xenon);
+            accent-color: #000000;
         }
 
         .stats {
             margin-top: 10px;
             font-size: 13px;
-            color: #94a3b8;
+            color: #ffffff;
+            font-weight: bold;
             display: flex;
             justify-content: space-between;
         }
@@ -142,7 +132,7 @@
     <p class="subtitle">Interações de WIMPs vs. Ruído de Radiação em Câmaras de Xenônio Líquido</p>
 
     <div class="container">
-        <!-- Painel Esquerdo: O Detector Físico -->
+        <!-- Painel Esquerdo -->
         <div class="panel">
             <div class="panel-title">🔬 Câmara de Xenônio Líquido (Tempo Real)</div>
             <canvas id="detectorCanvas" width="450" height="400"></canvas>
@@ -161,19 +151,18 @@
             </div>
         </div>
 
-        <!-- Painel Direito: O Gráfico de Análise Estatística -->
+        <!-- Painel Direito -->
         <div class="panel">
             <div class="panel-title">📊 Análise de Dados: log10(S2/S1) vs Energia</div>
             <canvas id="chartCanvas" width="450" height="400"></canvas>
             <div class="stats">
-                <span>Ruídos Filtrados: <strong id="count-noise" style="color:#94a3b8">0</strong></span>
-                <span>WIMPs Confirmados: <strong id="count-wimp" style="color:#ef4444">0</strong></span>
+                <span>Ruídos Filtrados: <strong id="count-noise" style="color:#000000">0</strong></span>
+                <span>WIMPs Confirmados: <strong id="count-wimp" style="color:#ffffff">0</strong></span>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAÇÕES DO SISTEMA ---
         const dCanvas = document.getElementById('detectorCanvas');
         const ctxD = dCanvas.getContext('2d');
         const cCanvas = document.getElementById('chartCanvas');
@@ -188,87 +177,77 @@
         let counters = { noise: 0, wimp: 0 };
         let currentWimpMass = 100;
 
-        // Atualizar valor da massa no painel
-        massSlider.addEventListener('input', (e) => {
+        massSlider.addEventListener('input', function(e) {
             currentWimpMass = parseInt(e.target.value);
             massVal.innerText = currentWimpMass + " GeV";
         });
 
-        // Inicializar átomos de Xenônio na câmara
-        for (let i = 0; i < 25; i++) {
+        // Criar átomos estáveis na tela
+        for (let i = 0; i < 20; i++) {
             atoms.push({
-                x: Math.random() * (dCanvas.width - 40) + 20,
-                y: Math.random() * (dCanvas.height - 40) + 20,
-                vx: (Math.random() - 0.5) * 0.8,
-                vy: (Math.random() - 0.5) * 0.8,
-                radius: 10,
-                pulse: 0
+                x: Math.random() * 390 + 30,
+                y: Math.random() * 340 + 30,
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: (Math.random() - 0.5) * 1.2,
+                radius: 12,
+                flash: 0
             });
         }
 
-        // --- GATILHOS DE EVENTOS ---
-        document.getElementById('trigger-noise').addEventListener('click', () => {
+        document.getElementById('trigger-noise').addEventListener('click', function() {
             particles.push({
-                x: 0, y: Math.random() * (dCanvas.height - 40) + 20,
-                vx: Math.random() * 3 + 3, vy: (Math.random() - 0.5) * 1,
-                type: 'noise', radius: 4, color: '#f59e0b', mass: 1
+                x: 10, y: Math.random() * 340 + 30,
+                vx: 5, vy: (Math.random() - 0.5) * 2,
+                type: 'noise', radius: 5, color: '#eab308', mass: 1
             });
         });
 
-        document.getElementById('trigger-wimp').addEventListener('click', () => {
+        document.getElementById('trigger-wimp').addEventListener('click', function() {
             particles.push({
-                x: 0, y: Math.random() * (dCanvas.height - 40) + 20,
-                vx: Math.random() * 4 + 4, vy: (Math.random() - 0.5) * 0.5,
-                type: 'wimp', radius: 5, color: 'rgba(239, 68, 68, 0.25)', mass: currentWimpMass
+                x: 10, y: Math.random() * 340 + 30,
+                vx: 6, vy: 0,
+                type: 'wimp', radius: 6, color: '#ef4444', mass: currentWimpMass
             });
         });
 
-        // --- DETECÇÃO E PLOTAGEM ---
         function registerDetection(type, mass) {
-            let energia;
-            let ratio;
-            
+            let energia, ratio;
             if (type === 'noise') {
-                energia = Math.random() * 15 + 5; 
-                ratio = 2.3 + (Math.random() * 0.4); 
+                energia = Math.random() * 12 + 4; 
+                ratio = 2.2 + (Math.random() * 0.4); 
                 counters.noise++;
                 document.getElementById('count-noise').innerText = counters.noise;
             } else {
-                energia = (mass / 200) * 35 + Math.random() * 10; 
-                ratio = 1.1 + (Math.random() * 0.4); 
+                energia = (mass / 200) * 35 + Math.random() * 8; 
+                ratio = 1.0 + (Math.random() * 0.4); 
                 counters.wimp++;
                 document.getElementById('count-wimp').innerText = counters.wimp;
             }
 
-            if (energia > 50) energia = 50;
-
-            let px = 50 + (energia / 50) * (cCanvas.width - 80);
-            let py = (cCanvas.height - 50) - ((ratio - 0.5) / 2.5) * (cCanvas.height - 80);
-            
+            let px = 60 + (energia / 50) * 340;
+            let py = 340 - ((ratio - 0.5) / 2.5) * 290;
             plotPoints.push({ x: px, y: py, type: type });
         }
 
-        // --- LOOP PRINCIPAL ---
         function update() {
-            // 1. Atualizar Fundo do Detector
-            ctxD.clearRect(0, 0, dCanvas.width, dCanvas.height);
+            // Desenhar Detector (Painel Esquerdo)
+            ctxD.fillStyle = '#020617';
+            ctxD.fillRect(0, 0, 450, 400);
 
-            // Desenhar Átomos de Xenônio
-            atoms.forEach(atom => {
+            atoms.forEach(function(atom) {
                 atom.x += atom.vx;
                 atom.y += atom.vy;
 
-                if (atom.x < atom.radius || atom.x > dCanvas.width - atom.radius) atom.vx *= -1;
-                if (atom.y < atom.radius || atom.y > dCanvas.height - atom.radius) atom.vy *= -1;
+                if (atom.x < atom.radius || atom.x > 450 - atom.radius) atom.vx *= -1;
+                if (atom.y < atom.radius || atom.y > 400 - atom.radius) atom.vy *= -1;
 
-                // Animação de Cintilação (S1)
-                if (atom.pulse > 0) {
+                if (atom.flash > 0) {
                     ctxD.beginPath();
-                    ctxD.arc(atom.x, atom.y, atom.radius + atom.pulse, 0, Math.PI * 2);
-                    ctxD.fillStyle = "rgba(56, 189, 248, " + (0.4 - atom.pulse/30) + ")";
+                    ctxD.arc(atom.x, atom.y, atom.radius + atom.flash, 0, Math.PI * 2);
+                    ctxD.fillStyle = 'rgba(56, 189, 248, 0.3)';
                     ctxD.fill();
-                    atom.pulse += 1.5;
-                    if (atom.pulse > 25) atom.pulse = 0;
+                    atom.flash += 2;
+                    if (atom.flash > 20) atom.flash = 0;
                 }
 
                 ctxD.beginPath();
@@ -276,10 +255,10 @@
                 ctxD.fillStyle = '#0284c7';
                 ctxD.fill();
                 ctxD.strokeStyle = '#38bdf8';
+                ctxD.lineWidth = 2;
                 ctxD.stroke();
             });
 
-            // Gerenciar Partículas
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx;
@@ -290,14 +269,42 @@
                 ctxD.fillStyle = p.color;
                 ctxD.fill();
 
-                // Checar colisões
-                atoms.forEach(atom => {
+                atoms.forEach(function(atom) {
                     let dx = p.x - atom.x;
                     let dy = p.y - atom.y;
                     let dist = Math.sqrt(dx * dx + dy * dy);
 
                     if (dist < atom.radius + p.radius) {
-                        atom.pulse = 1; 
-                        atom.vx += p.vx * (p.mass / 250); 
-                        
+                        atom.flash = 1;
+                        atom.vx += p.vx * (p.mass / 200);
                         registerDetection(p.type, p.mass);
+                        particles.splice(i, 1);
+                    }
+                });
+
+                if (p.x > 450) particles.splice(i, 1);
+            }
+
+            // Desenhar Gráfico (Painel Direito)
+            ctxC.fillStyle = '#020617';
+            ctxC.fillRect(0, 0, 450, 400);
+
+            // Zonas de cor de fundo estáticas no gráfico
+            ctxC.fillStyle = 'rgba(59, 130, 246, 0.08)';
+            ctxC.fillRect(60, 40, 360, 140);
+            ctxC.fillStyle = 'rgba(239, 68, 68, 0.05)';
+            ctxC.fillRect(60, 180, 360, 160);
+
+            // Linha divisória verde
+            ctxC.beginPath();
+            ctxC.moveTo(60, 180);
+            ctxC.lineTo(420, 180);
+            ctxC.strokeStyle = '#10b981';
+            ctxC.lineWidth = 2;
+            ctxC.stroke();
+
+            // Eixos cartesianos
+            ctxC.beginPath();
+            ctxC.moveTo(60, 30);
+            ctxC.lineTo(60, 340);
+            ctxC.lineTo(430, 340);
