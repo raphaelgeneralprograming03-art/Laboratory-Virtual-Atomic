@@ -73,8 +73,14 @@
         .controls {
             margin-top: 15px;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
             width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
         }
 
         button {
@@ -101,6 +107,26 @@
             background-color: #dc2626;
         }
 
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-xenon);
+        }
+
         .stats {
             margin-top: 10px;
             font-size: 13px;
@@ -121,8 +147,17 @@
             <div class="panel-title">🔬 Câmara de Xenônio Líquido (Tempo Real)</div>
             <canvas id="detectorCanvas" width="450" height="400"></canvas>
             <div class="controls">
-                <button id="trigger-noise">Injetar Ruído (Gama/Beta)</button>
-                <button id="trigger-wimp">Disparar Matéria Escura</button>
+                <div class="btn-group">
+                    <button id="trigger-noise">Injetar Ruído</button>
+                    <button id="trigger-wimp">Disparar Matéria Escura</button>
+                </div>
+                <div class="slider-group">
+                    <div class="slider-row">
+                        <label>Massa do WIMP:</label>
+                        <input type="range" id="mass-slider" min="10" max="200" value="100">
+                        <span id="mass-val">100 GeV</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -144,10 +179,20 @@
         const cCanvas = document.getElementById('chartCanvas');
         const ctxC = cCanvas.getContext('2d');
 
+        const massSlider = document.getElementById('mass-slider');
+        const massVal = document.getElementById('mass-val');
+
         let atoms = [];
         let particles = [];
         let plotPoints = [];
         let counters = { noise: 0, wimp: 0 };
+        let currentWimpMass = 100;
+
+        // Atualizar valor da massa no painel
+        massSlider.addEventListener('input', (e) => {
+            currentWimpMass = parseInt(e.target.value);
+            massVal.innerText = `${currentWimpMass} GeV`;
+        });
 
         // Inicializar átomos de Xenônio na câmara
         for (let i = 0; i < 25; i++) {
@@ -164,118 +209,91 @@
         // --- GATILHOS DE EVENTOS ---
         document.getElementById('trigger-noise').addEventListener('click', () => {
             particles.push({
-                x: 0, y: Math.random() * dCanvas.height,
-                vx: Math.random() * 4 + 3, vy: (Math.random() - 0.5) * 2,
-                type: 'noise', radius: 4, color: '#f59e0b'
+                x: 0, y: Math.random() * (dCanvas.height - 40) + 20,
+                vx: Math.random() * 3 + 3, vy: (Math.random() - 0.5) * 1,
+                type: 'noise', radius: 4, color: '#f59e0b', mass: 1
             });
         });
 
         document.getElementById('trigger-wimp').addEventListener('click', () => {
             particles.push({
-                x: 0, y: Math.random() * dCanvas.height,
-                vx: Math.random() * 5 + 4, vy: (Math.random() - 0.5) * 1,
-                type: 'wimp', radius: 5, color: 'rgba(239, 68, 68, 0.15)' // Praticamente invisível antes do impacto
+                x: 0, y: Math.random() * (dCanvas.height - 40) + 20,
+                vx: Math.random() * 4 + 4, vy: (Math.random() - 0.5) * 0.5,
+                type: 'wimp', radius: 5, color: 'rgba(239, 68, 68, 0.2)', mass: currentWimpMass
             });
         });
 
         // --- DETECÇÃO E PLOTAGEM ---
-        function registerDetection(type) {
-            let energia = Math.random() * 40 + 5; // keV randomizado
+        function registerDetection(type, mass) {
+            let energia;
             let ratio;
             
             if (type === 'noise') {
-                ratio = 2.3 + (Math.random() * 0.5); // Sinal S2 alto (Ruído)
+                energia = Math.random() * 15 + 5; // Ruído gera baixa energia de recuo nuclear
+                ratio = 2.3 + (Math.random() * 0.5); // Sinal S2 alto (Eletrônico)
                 counters.noise++;
                 document.getElementById('count-noise').innerText = counters.noise;
             } else {
-                ratio = 1.2 + (Math.random() * 0.5); // Sinal S2 baixo (Matéria Escura)
+                // Física real: massa maior do WIMP transfere mais energia cinética (keV) ao núcleo
+                energia = (mass / 200) * 35 + Math.random() * 10; 
+                ratio = 1.1 + (Math.random() * 0.5); // Sinal S2 baixo (Nuclear)
                 counters.wimp++;
                 document.getElementById('count-wimp').innerText = counters.wimp;
             }
 
-            // Mapeia os dados reais para coordenadas de pixels do gráfico
+            // Limitar energia no gráfico
+            if (energia > 50) energia = 50;
+
+            // Mapeia dados para pixels
             let px = 50 + (energia / 50) * (cCanvas.width - 80);
             let py = (cCanvas.height - 50) - ((ratio - 0.5) / 2.5) * (cCanvas.height - 80);
             
             plotPoints.push({ x: px, y: py, type: type });
         }
 
-        // --- LOOP PRINCIPAL DE RENDERIZAÇÃO ---
+        // --- LOOP PRINCIPAL ---
         function update() {
-            // 1. Limpar e atualizar fundo da Câmara
+            // 1. Atualizar Fundo do Detector
             ctxD.clearRect(0, 0, dCanvas.width, dCanvas.height);
 
-            // Mover e desenhar Átomos de Xenônio
+            // Desenhar Átomos de Xenônio
             atoms.forEach(atom => {
                 atom.x += atom.vx;
                 atom.y += atom.vy;
 
-                // Colisões com as paredes da câmara
                 if (atom.x < atom.radius || atom.x > dCanvas.width - atom.radius) atom.vx *= -1;
                 if (atom.y < atom.radius || atom.y > dCanvas.height - atom.radius) atom.vy *= -1;
 
-                // Efeito visual de cintilação (S1) quando colidido
+                // Animação de Cintilação (S1)
                 if (atom.pulse > 0) {
                     ctxD.beginPath();
                     ctxD.arc(atom.x, atom.y, atom.radius + atom.pulse, 0, Math.PI * 2);
-                    ctxD.fillStyle = `rgba(56, 189, 248, ${0.4 - atom.pulse/50})`;
+                    ctxD.fillStyle = `rgba(56, 189, 248, ${0.4 - atom.pulse/30})`;
                     ctxD.fill();
-                    atom.pulse += 2;
-                    if (atom.pulse > 30) atom.pulse = 0;
+                    atom.pulse += 1.5;
+                    if (atom.pulse > 25) atom.pulse = 0;
                 }
 
                 ctxD.beginPath();
                 ctxD.arc(atom.x, atom.y, atom.radius, 0, Math.PI * 2);
                 ctxD.fillStyle = '#0284c7';
                 ctxD.fill();
-                ctxD.strokeStyle = var(--accent-xenon);
+                ctxD.strokeStyle = '#38bdf8';
                 ctxD.stroke();
             });
 
-            // Mover e atualizar feixes de partículas disparados
+            // Gerenciar Partículas
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Desenhar partícula
                 ctxD.beginPath();
                 ctxD.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctxD.fillStyle = p.color;
                 ctxD.fill();
 
-                // Testar colisão com qualquer átomo de Xenônio
+                // Checar colisões
                 atoms.forEach(atom => {
                     let dx = p.x - atom.x;
                     let dy = p.y - atom.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < atom.radius + p.radius) {
-                        atom.pulse = 1; // Ativa animação de cintilação
-                        atom.vx += p.vx * 0.2; // Transfere energia de recuo
-                        
-                        registerDetection(p.type);
-                        particles.splice(i, 1); // Remove partícula após colisão
-                    }
-                });
-
-                // Remover se sair da tela sem colidir
-                if (p.x > dCanvas.width) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // 2. Renderizar e Atualizar Gráfico Estatístico
-            ctxC.clearRect(0, 0, cCanvas.width, cCanvas.height);
-            
-            // Fundo das regiões do gráfico
-            ctxC.fillStyle = 'rgba(59, 130, 246, 0.05)'; // Região superior de ruído
-            ctxC.fillRect(50, 30, cCanvas.width - 80, (cCanvas.height - 80) * 0.5);
-            ctxC.fillStyle = 'rgba(239, 68, 68, 0.03)'; // Região inferior de WIMPs
-            ctxC.fillRect(50, 30 + (cCanvas.height - 80) * 0.5, cCanvas.width - 80, (cCanvas.height - 80) * 0.5);
-
-            // Linha divisória de análise (Filtro estatístico)
-            ctxC.beginPath();
-            ctxC.moveTo(50, cCanvas.height/2 - 10);
-            ctxC.lineTo(cCanvas.width - 30, cCanvas.height/2 - 10);
-            ctxC.strokeStyle = '#10b981';
