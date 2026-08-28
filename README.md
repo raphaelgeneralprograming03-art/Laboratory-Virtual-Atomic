@@ -38,12 +38,13 @@
             justify-content: center;
         }
 
-        /* PAINEL ALTERADO PARA LARANJA */
+        /* PAINEL LARANJA PEDIDO */
         .panel {
             background-color: #ea580c;
             border-radius: 12px;
             padding: 15px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            width: 450px;
         }
 
         .panel-title {
@@ -57,10 +58,14 @@
             padding-bottom: 5px;
         }
 
-        canvas {
+        /* ÁREAS DE SIMULAÇÃO REFEITAS USANDO DIVS SÓLIDAS */
+        .display-box {
             background-color: #020617;
             border-radius: 8px;
-            display: block;
+            width: 450px;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
         }
 
         .controls {
@@ -76,7 +81,7 @@
             gap: 10px;
         }
 
-        /* BOTÕES ALTERADOS PARA PRETO E VERDE */
+        /* BOTÕES PRETO E VERDE PEDIDOS */
         button {
             background-color: #000000;
             color: #10b981;
@@ -124,6 +129,60 @@
             display: flex;
             justify-content: space-between;
         }
+
+        /* ELEMENTOS DA CÂMARA DE XENÔNIO */
+        .atom {
+            width: 24px;
+            height: 24px;
+            background-color: #0284c7;
+            border: 2px solid #38bdf8;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.1s linear;
+        }
+
+        .particle {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        /* ANIMAÇÃO DE IMPACTO CINTILAÇÃO (S1) */
+        @keyframes pulse-effect {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+            100% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
+        }
+        .pulse {
+            animation: pulse-effect 0.4s ease-out;
+        }
+
+        /* LINHA DIVISÓRIA DO GRÁFICO */
+        .chart-line {
+            position: absolute;
+            left: 50px;
+            top: 180px;
+            width: 370px;
+            height: 2px;
+            background-color: #10b981;
+            z-index: 2;
+        }
+
+        /* TEXTOS INTERNOS DO GRÁFICO */
+        .chart-label {
+            position: absolute;
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+            border: 1px solid #ffffff;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body>
@@ -135,7 +194,7 @@
         <!-- Painel Esquerdo -->
         <div class="panel">
             <div class="panel-title">🔬 Câmara de Xenônio Líquido (Tempo Real)</div>
-            <canvas id="detectorCanvas" width="450" height="400"></canvas>
+            <div id="detectorView" class="display-box"></div>
             <div class="controls">
                 <div class="btn-group">
                     <button id="trigger-noise">Injetar Ruído</button>
@@ -154,7 +213,18 @@
         <!-- Painel Direito -->
         <div class="panel">
             <div class="panel-title">📊 Análise de Dados: log10(S2/S1) vs Energia</div>
-            <canvas id="chartCanvas" width="450" height="400"></canvas>
+            <div id="chartView" class="display-box">
+                <!-- Zonas de Fundo -->
+                <div style="position:absolute; left:50px; top:40px; width:370px; height:140px; background-color:rgba(59,130,246,0.08);"></div>
+                <div style="position:absolute; left:50px; top:180px; width:370px; height:160px; background-color:rgba(239,68,68,0.05);"></div>
+                
+                <div class="chart-line"></div>
+                
+                <!-- Textos das Zonas -->
+                <div class="chart-label" style="left:280px; top:60px;">Zona de Ruído (ER)</div>
+                <div class="chart-label" style="left:230px; top:280px; color:#f87171;">Zona de Matéria Escura (NR)</div>
+                <div class="chart-label" style="left:170px; top:360px; color:#94a3b8;">Energia de Recuo (Subindo &rarr;)</div>
+            </div>
             <div class="stats">
                 <span>Ruídos Filtrados: <strong id="count-noise" style="color:#000000">0</strong></span>
                 <span>WIMPs Confirmados: <strong id="count-wimp" style="color:#ffffff">0</strong></span>
@@ -163,17 +233,12 @@
     </div>
 
     <script>
-        const dCanvas = document.getElementById('detectorCanvas');
-        const ctxD = dCanvas.getContext('2d');
-        const cCanvas = document.getElementById('chartCanvas');
-        const ctxC = cCanvas.getContext('2d');
-
+        const detectorView = document.getElementById('detectorView');
+        const chartView = document.getElementById('chartView');
         const massSlider = document.getElementById('mass-slider');
         const massVal = document.getElementById('mass-val');
 
         let atoms = [];
-        let particles = [];
-        let plotPoints = [];
         let counters = { noise: 0, wimp: 0 };
         let currentWimpMass = 100;
 
@@ -182,129 +247,66 @@
             massVal.innerText = currentWimpMass + " GeV";
         });
 
-        // Criar átomos estáveis na tela
-        for (let i = 0; i < 20; i++) {
+        // Criar os Átomos de Xenônio visíveis fisicamente na tela
+        for (let i = 0; i < 15; i++) {
+            let el = document.createElement('div');
+            el.className = 'atom';
+            detectorView.appendChild(el);
+
             atoms.push({
-                x: Math.random() * 390 + 30,
-                y: Math.random() * 340 + 30,
-                vx: (Math.random() - 0.5) * 1.2,
-                vy: (Math.random() - 0.5) * 1.2,
-                radius: 12,
-                flash: 0
+                element: el,
+                x: Math.random() * 380 + 20,
+                y: Math.random() * 340 + 20,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2
             });
         }
 
+        // Evento Injetar Ruído (Partícula Amarela)
         document.getElementById('trigger-noise').addEventListener('click', function() {
-            particles.push({
-                x: 10, y: Math.random() * 340 + 30,
-                vx: 5, vy: (Math.random() - 0.5) * 2,
-                type: 'noise', radius: 5, color: '#eab308', mass: 1
-            });
+            createParticle('#eab308', 'noise');
         });
 
+        // Evento Disparar Matéria Escura (Partícula Vermelha)
         document.getElementById('trigger-wimp').addEventListener('click', function() {
-            particles.push({
-                x: 10, y: Math.random() * 340 + 30,
-                vx: 6, vy: 0,
-                type: 'wimp', radius: 6, color: '#ef4444', mass: currentWimpMass
-            });
+            createParticle('#ef4444', 'wimp');
         });
 
-        function registerDetection(type, mass) {
-            let energia, ratio;
-            if (type === 'noise') {
-                energia = Math.random() * 12 + 4; 
-                ratio = 2.2 + (Math.random() * 0.4); 
-                counters.noise++;
-                document.getElementById('count-noise').innerText = counters.noise;
-            } else {
-                energia = (mass / 200) * 35 + Math.random() * 8; 
-                ratio = 1.0 + (Math.random() * 0.4); 
-                counters.wimp++;
-                document.getElementById('count-wimp').innerText = counters.wimp;
-            }
+        function createParticle(color, type) {
+            let pEl = document.createElement('div');
+            pEl.className = 'particle';
+            pEl.style.backgroundColor = color;
+            pEl.style.left = '0px';
+            
+            let targetY = Math.random() * 340 + 30;
+            pEl.style.top = targetY + 'px';
+            detectorView.appendChild(pEl);
 
-            let px = 60 + (energia / 50) * 340;
-            let py = 340 - ((ratio - 0.5) / 2.5) * 290;
-            plotPoints.push({ x: px, y: py, type: type });
-        }
+            let posX = 0;
+            let interval = setInterval(function() {
+                posX += 8;
+                pEl.style.left = posX + 'px';
 
-        function update() {
-            // Desenhar Detector (Painel Esquerdo)
-            ctxD.fillStyle = '#020617';
-            ctxD.fillRect(0, 0, 450, 400);
-
-            atoms.forEach(function(atom) {
-                atom.x += atom.vx;
-                atom.y += atom.vy;
-
-                if (atom.x < atom.radius || atom.x > 450 - atom.radius) atom.vx *= -1;
-                if (atom.y < atom.radius || atom.y > 400 - atom.radius) atom.vy *= -1;
-
-                if (atom.flash > 0) {
-                    ctxD.beginPath();
-                    ctxD.arc(atom.x, atom.y, atom.radius + atom.flash, 0, Math.PI * 2);
-                    ctxD.fillStyle = 'rgba(56, 189, 248, 0.3)';
-                    ctxD.fill();
-                    atom.flash += 2;
-                    if (atom.flash > 20) atom.flash = 0;
-                }
-
-                ctxD.beginPath();
-                ctxD.arc(atom.x, atom.y, atom.radius, 0, Math.PI * 2);
-                ctxD.fillStyle = '#0284c7';
-                ctxD.fill();
-                ctxD.strokeStyle = '#38bdf8';
-                ctxD.lineWidth = 2;
-                ctxD.stroke();
-            });
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-
-                ctxD.beginPath();
-                ctxD.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctxD.fillStyle = p.color;
-                ctxD.fill();
-
+                // Checar proximidade com os átomos
                 atoms.forEach(function(atom) {
-                    let dx = p.x - atom.x;
-                    let dy = p.y - atom.y;
+                    let dx = posX - atom.x;
+                    let dy = targetY - atom.y;
                     let dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < atom.radius + p.radius) {
-                        atom.flash = 1;
-                        atom.vx += p.vx * (p.mass / 200);
-                        registerDetection(p.type, p.mass);
-                        particles.splice(i, 1);
+                    if (dist < 22) { // Houve Colisão
+                        clearInterval(interval);
+                        pEl.remove();
+                        
+                        // Efeito visual de cintilação (S1) instantâneo
+                        atom.element.classList.add('pulse');
+                        setTimeout(() => atom.element.classList.remove('pulse'), 400);
+
+                        // Agita o átomo (transfere energia)
+                        atom.vx += type === 'wimp' ? (currentWimpMass / 50) : 0.5;
+                        atom.vy += (Math.random() - 0.5) * 2;
+
+                        plotData(type);
                     }
                 });
 
-                if (p.x > 450) particles.splice(i, 1);
-            }
-
-            // Desenhar Gráfico (Painel Direito)
-            ctxC.fillStyle = '#020617';
-            ctxC.fillRect(0, 0, 450, 400);
-
-            // Zonas de cor de fundo estáticas no gráfico
-            ctxC.fillStyle = 'rgba(59, 130, 246, 0.08)';
-            ctxC.fillRect(60, 40, 360, 140);
-            ctxC.fillStyle = 'rgba(239, 68, 68, 0.05)';
-            ctxC.fillRect(60, 180, 360, 160);
-
-            // Linha divisória verde
-            ctxC.beginPath();
-            ctxC.moveTo(60, 180);
-            ctxC.lineTo(420, 180);
-            ctxC.strokeStyle = '#10b981';
-            ctxC.lineWidth = 2;
-            ctxC.stroke();
-
-            // Eixos cartesianos
-            ctxC.beginPath();
-            ctxC.moveTo(60, 30);
-            ctxC.lineTo(60, 340);
-            ctxC.lineTo(430, 340);
+                if (posX > 450) {
