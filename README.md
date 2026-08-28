@@ -167,7 +167,7 @@
             <canvas id="chartCanvas" width="450" height="400"></canvas>
             <div class="stats">
                 <span>Ruídos Filtrados: <strong id="count-noise" style="color:#94a3b8">0</strong></span>
-                <span>WIMPs Confirmados: <strong id="count-wimp" style="color:var(--accent-wimp)">0</strong></span>
+                <span>WIMPs Confirmados: <strong id="count-wimp" style="color:#ef4444">0</strong></span>
             </div>
         </div>
     </div>
@@ -191,7 +191,7 @@
         // Atualizar valor da massa no painel
         massSlider.addEventListener('input', (e) => {
             currentWimpMass = parseInt(e.target.value);
-            massVal.innerText = `${currentWimpMass} GeV`;
+            massVal.innerText = currentWimpMass + " GeV";
         });
 
         // Inicializar átomos de Xenônio na câmara
@@ -219,7 +219,7 @@
             particles.push({
                 x: 0, y: Math.random() * (dCanvas.height - 40) + 20,
                 vx: Math.random() * 4 + 4, vy: (Math.random() - 0.5) * 0.5,
-                type: 'wimp', radius: 5, color: 'rgba(239, 68, 68, 0.2)', mass: currentWimpMass
+                type: 'wimp', radius: 5, color: 'rgba(239, 68, 68, 0.25)', mass: currentWimpMass
             });
         });
 
@@ -229,22 +229,19 @@
             let ratio;
             
             if (type === 'noise') {
-                energia = Math.random() * 15 + 5; // Ruído gera baixa energia de recuo nuclear
-                ratio = 2.3 + (Math.random() * 0.5); // Sinal S2 alto (Eletrônico)
+                energia = Math.random() * 15 + 5; 
+                ratio = 2.3 + (Math.random() * 0.4); 
                 counters.noise++;
                 document.getElementById('count-noise').innerText = counters.noise;
             } else {
-                // Física real: massa maior do WIMP transfere mais energia cinética (keV) ao núcleo
                 energia = (mass / 200) * 35 + Math.random() * 10; 
-                ratio = 1.1 + (Math.random() * 0.5); // Sinal S2 baixo (Nuclear)
+                ratio = 1.1 + (Math.random() * 0.4); 
                 counters.wimp++;
                 document.getElementById('count-wimp').innerText = counters.wimp;
             }
 
-            // Limitar energia no gráfico
             if (energia > 50) energia = 50;
 
-            // Mapeia dados para pixels
             let px = 50 + (energia / 50) * (cCanvas.width - 80);
             let py = (cCanvas.height - 50) - ((ratio - 0.5) / 2.5) * (cCanvas.height - 80);
             
@@ -268,7 +265,7 @@
                 if (atom.pulse > 0) {
                     ctxD.beginPath();
                     ctxD.arc(atom.x, atom.y, atom.radius + atom.pulse, 0, Math.PI * 2);
-                    ctxD.fillStyle = `rgba(56, 189, 248, ${0.4 - atom.pulse/30})`;
+                    ctxD.fillStyle = "rgba(56, 189, 248, " + (0.4 - atom.pulse/30) + ")";
                     ctxD.fill();
                     atom.pulse += 1.5;
                     if (atom.pulse > 25) atom.pulse = 0;
@@ -297,3 +294,10 @@
                 atoms.forEach(atom => {
                     let dx = p.x - atom.x;
                     let dy = p.y - atom.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < atom.radius + p.radius) {
+                        atom.pulse = 1; 
+                        atom.vx += p.vx * (p.mass / 250); 
+                        
+                        registerDetection(p.type, p.mass);
