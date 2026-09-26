@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -279,7 +279,7 @@
             massVal.innerText = currentWimpMass + " GeV";
         });
 
-        // 1. Gera 12 átomos de Xenônio fixos e perfeitamente visíveis em Grid (Garante o fim da tela preta)
+        // 1. Gera 12 átomos de Xenônio fixos e perfeitamente visíveis em Grid
         const totalAtoms = 12;
         for (let i = 0; i < totalAtoms; i++) {
             let atomEl = document.createElement('div');
@@ -288,10 +288,10 @@
             detectorView.appendChild(atomEl);
         }
 
-        // Captura a lista de átomos criados para podermos animá-los nos cliques
+        // Captura a lista de átomos criados para poder animá-los nos cliques
         const atomList = document.querySelectorAll('.atom');
 
-        // 2. Interações dos Botões Corrigidas para Atualizar os Dois Painéis Simultaneamente
+        // 2. Interações dos Botões Corrigidas
         document.getElementById('trigger-noise').addEventListener('click', function() {
             executeCollision('noise');
         });
@@ -315,3 +315,40 @@
             let dot = document.createElement('div');
             dot.className = 'dot';
 
+            let posX, posY;
+
+            if (type === 'noise') {
+                // Zona de Ruído (ER - Topo: Y entre 45px e 145px)
+                posY = Math.floor(Math.random() * 100) + 45;
+                posX = Math.floor(Math.random() * 300) + 60;
+                dot.style.backgroundColor = '#38bdf8';
+                dot.style.borderColor = '#0284c7';
+
+                counters.noise++;
+                document.getElementById('count-noise').innerText = counters.noise;
+            } else if (type === 'wimp') {
+                // Zona de Matéria Escura (NR - Fundo: Y entre 175px e 270px)
+                posY = Math.floor(Math.random() * 95) + 175;
+                
+                // A energia de recuo escala proporcionalmente com a Massa do WIMP (Slider)
+                let energyFactor = currentWimpMass / 200;
+                let minX = 60 + (energyFactor * 40);
+                let rangeX = 180 + (energyFactor * 100);
+                posX = Math.floor(Math.random() * rangeX) + minX;
+                if (posX > 360) posX = 360;
+
+                dot.style.backgroundColor = '#ef4444';
+                dot.style.borderColor = '#f87171';
+
+                counters.wimp++;
+                document.getElementById('count-wimp').innerText = counters.wimp;
+            }
+
+            dot.style.left = posX + 'px';
+            dot.style.top = posY + 'px';
+
+            chartView.appendChild(dot);
+        }
+    </script>
+</body>
+</html>
